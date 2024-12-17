@@ -58,7 +58,7 @@
         const textInput = document.getElementById('text-input');
         const sendButton = document.getElementById('send-button');
 
-        const apiUrl = "https://chatgpt-api.shn.hk/v1/";
+        const proxyUrl = "http://localhost:3000/proxy";
 
         sendButton.addEventListener('click', async () => {
             const userInput = textInput.value.trim();
@@ -69,12 +69,10 @@
             textInput.value = '';
 
             try {
-                // Отправка запроса к API
-                const response = await fetch(apiUrl, {
+                // Отправка запроса на прокси-сервер
+                const response = await fetch(proxyUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: "gpt-3.5-turbo",
                         messages: [{ role: "user", content: userInput }]
