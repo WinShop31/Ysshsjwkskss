@@ -1,8 +1,109 @@
-<div class="dropdown">
-  <button onclick="myFunction()" class="dropbtn">Выпадающий</button>
-  <div id="myDropdown" class="dropdown-content">
-    <a href="#">Ссылка 1</a>
-    <a href="#">Ссылка 2</a>
-    <a href="#">Ссылка 3</a>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат GPT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #chat-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .user {
+            text-align: right;
+            color: blue;
+        }
+        .bot {
+            text-align: left;
+            color: green;
+        }
+        #input-container {
+            display: flex;
+        }
+        #text-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Чат GPT</h1>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="text-input" placeholder="Введите сообщение..." />
+        <button id="send-button">Отправить</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const textInput = document.getElementById('text-input');
+        const sendButton = document.getElementById('send-button');
+
+        const apiKey = "sk-aS1pRNgQRxUnqEwyDe3005E498154b3bA5EdE8EdBfEe0299";
+        const apiUrl = "https://lk.neuroapi.host/v1/completions";
+
+        sendButton.addEventListener('click', async () => {
+            const userInput = textInput.value.trim();
+            if (!userInput) return;
+
+            // Отображение сообщения пользователя
+            appendMessage(userInput, 'user');
+            textInput.value = '';
+
+            try {
+                // Отправка запроса к API
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [{ role: "user", content: userInput }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка при запросе к API');
+                }
+
+                const data = await response.json();
+                const botReply = data.choices[0]?.message?.content || 'Нет ответа от API';
+
+                // Отображение ответа бота
+                appendMessage(botReply, 'bot');
+            } catch (error) {
+                appendMessage(`Ошибка: ${error.message}`, 'bot');
+            }
+        });
+
+        function appendMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}`;
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
