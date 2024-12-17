@@ -38,10 +38,11 @@
             padding: 10px;
             font-size: 16px;
         }
-        #send-button {
+        #send-button, #reset-button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            margin-left: 5px;
         }
     </style>
 </head>
@@ -51,55 +52,55 @@
     <div id="input-container">
         <input type="text" id="text-input" placeholder="Введите сообщение..." />
         <button id="send-button">Отправить</button>
+        <button id="reset-button">Сбросить</button>
     </div>
 
     <script>
         const chatContainer = document.getElementById('chat-container');
         const textInput = document.getElementById('text-input');
         const sendButton = document.getElementById('send-button');
+        const resetButton = document.getElementById('reset-button');
 
-        const proxyUrl = "http://localhost:3000/proxy";
-
-        sendButton.addEventListener('click', async () => {
-            const userInput = textInput.value.trim();
-            if (!userInput) return;
-
-            // Отображение сообщения пользователя
-            appendMessage(userInput, 'user');
-            textInput.value = '';
-
-            try {
-                // Отправка запроса на прокси-сервер
-                const response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: "gpt-3.5-turbo",
-                        messages: [{ role: "user", content: userInput }]
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка при запросе к API');
-                }
-
-                const data = await response.json();
-                const botReply = data.choices[0]?.message?.content || 'Нет ответа от API';
-
-                // Отображение ответа бота
-                appendMessage(botReply, 'bot');
-            } catch (error) {
-                appendMessage(`Ошибка: ${error.message}`, 'bot');
-            }
-        });
-
-        function appendMessage(message, sender) {
+        const appendMessage = (message, sender) => {
             const messageElement = document.createElement('div');
             messageElement.className = `message ${sender}`;
             messageElement.textContent = message;
             chatContainer.appendChild(messageElement);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+        };
+
+        sendButton.addEventListener('click', async () => {
+            const userInput = textInput.value.trim();
+            if (!userInput) return;
+
+            appendMessage(userInput, 'user');
+            textInput.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userInput }),
+                });
+
+                const data = await response.json();
+                appendMessage(data.reply, 'bot');
+            } catch (error) {
+                appendMessage('Ошибка: Не удалось получить ответ.', 'bot');
+                console.error('Ошибка:', error);
+            }
+        });
+
+        resetButton.addEventListener('click', async () => {
+            try {
+                await fetch('/reset', { method: 'POST' });
+                chatContainer.innerHTML = '';
+                appendMessage('История сброшена!', 'bot');
+            } catch (error) {
+                appendMessage('Ошибка: Не удалось сбросить историю.', 'bot');
+                console.error('Ошибка:', error);
+            }
+        });
     </script>
 </body>
 </html>
