@@ -3,104 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Чат GPT</title>
+    <title>ChatGPT Web Client</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
             max-width: 600px;
             margin: 0 auto;
+            background: white;
             padding: 20px;
-        }
-        #chat-container {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 400px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .message {
-            margin: 5px 0;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
         }
         .user {
-            text-align: right;
-            color: blue;
+            background: #d1e7dd;
+            align-self: flex-end;
         }
-        .bot {
-            text-align: left;
-            color: green;
+        .assistant {
+            background: #f8d7da;
         }
-        #input-container {
+        .input-group {
             display: flex;
+            margin-top: 20px;
         }
-        #text-input {
+        input {
             flex: 1;
             padding: 10px;
-            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
-        #send-button, #reset-button {
-            padding: 10px 20px;
-            font-size: 16px;
+        button {
+            margin-left: 10px;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
-            margin-left: 5px;
+        }
+        button:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h1>Чат GPT</h1>
-    <div id="chat-container"></div>
-    <div id="input-container">
-        <input type="text" id="text-input" placeholder="Введите сообщение..." />
-        <button id="send-button">Отправить</button>
-        <button id="reset-button">Сбросить</button>
+    <div class="container">
+        <h1>ChatGPT Client</h1>
+        <div id="chat" style="display: flex; flex-direction: column;"></div>
+        <div class="input-group">
+            <input id="userInput" type="text" placeholder="Type your message here..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
 
     <script>
-        const chatContainer = document.getElementById('chat-container');
-        const textInput = document.getElementById('text-input');
-        const sendButton = document.getElementById('send-button');
-        const resetButton = document.getElementById('reset-button');
+        const apiUrl = "https://minitoolai.com/api/chatgpt/";
+        const apiKey = "Bearer sk-SI91VHEWiqKfd0oi7dzDqxh1nEvB8t8gt8khevfUjSe6m00hWeXdX9zE2AM";
 
-        const appendMessage = (message, sender) => {
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${sender}`;
-            messageElement.textContent = message;
-            chatContainer.appendChild(messageElement);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        };
+        const chat = document.getElementById("chat");
+        const userInput = document.getElementById("userInput");
 
-        sendButton.addEventListener('click', async () => {
-            const userInput = textInput.value.trim();
-            if (!userInput) return;
+        function addMessage(role, content) {
+            const message = document.createElement("div");
+            message.className = `message ${role}`;
+            message.textContent = content;
+            chat.appendChild(message);
+            chat.scrollTop = chat.scrollHeight;
+        }
 
-            appendMessage(userInput, 'user');
-            textInput.value = '';
+        async function sendMessage() {
+            const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+
+            addMessage("user", userMessage);
+            userInput.value = "";
 
             try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userInput }),
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": apiKey,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify([
+                        { role: "system", content: "You are a helpful assistant." },
+                        { role: "user", content: userMessage }
+                    ])
                 });
 
-                const data = await response.json();
-                appendMessage(data.reply, 'bot');
-            } catch (error) {
-                appendMessage('Ошибка: Не удалось получить ответ.', 'bot');
-                console.error('Ошибка:', error);
-            }
-        });
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
 
-        resetButton.addEventListener('click', async () => {
-            try {
-                await fetch('/reset', { method: 'POST' });
-                chatContainer.innerHTML = '';
-                appendMessage('История сброшена!', 'bot');
+                const responseData = await response.json();
+                const assistantMessage = responseData.choices[0].message.content;
+                addMessage("assistant", assistantMessage);
             } catch (error) {
-                appendMessage('Ошибка: Не удалось сбросить историю.', 'bot');
-                console.error('Ошибка:', error);
+                addMessage("assistant", "Error: Unable to process your request.");
+                console.error(error);
             }
-        });
+        }
     </script>
 </body>
 </html>
