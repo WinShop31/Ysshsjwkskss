@@ -3,52 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Web Client</title>
+    <title>GPT Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
         }
-        .container {
+        #chat {
+            width: 100%;
             max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
+            height: 70vh;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ddd;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .message {
             margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
         }
-        .user {
-            background: #d1e7dd;
-            align-self: flex-end;
+        .message.user {
+            text-align: right;
+            color: blue;
         }
-        .assistant {
-            background: #f8d7da;
+        .message.assistant {
+            text-align: left;
+            color: green;
         }
-        .input-group {
+        #inputContainer {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
             display: flex;
-            margin-top: 20px;
         }
-        input {
+        #userInput {
             flex: 1;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             border-radius: 5px;
+            box-sizing: border-box;
         }
         button {
+            padding: 10px 20px;
             margin-left: 10px;
-            padding: 10px;
-            background: #007bff;
+            cursor: pointer;
+            background: #007BFF;
             color: white;
             border: none;
             border-radius: 5px;
-            cursor: pointer;
+            transition: background 0.3s;
         }
         button:hover {
             background: #0056b3;
@@ -56,18 +67,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ChatGPT Client</h1>
-        <div id="chat" style="display: flex; flex-direction: column;"></div>
-        <div class="input-group">
-            <input id="userInput" type="text" placeholder="Type your message here..." />
-            <button onclick="sendMessage()">Send</button>
-        </div>
+    <div id="chat"></div>
+    <div id="inputContainer">
+        <input id="userInput" type="text" placeholder="Введите сообщение">
+        <button onclick="sendMessage()">Отправить</button>
     </div>
 
     <script>
-        const apiUrl = "https://minitoolai.com/api/chatgpt/";
-        const apiKey = "sk-SI91VHEWiqKfd0oi7dzDqxh1nEvB8t8gt8khevfUjSe6m00hWeXdX9zE2AM";
+        // Ваш API-ключ и URL
+        const apiUrl = "http://aeza.theksenon.pro/v1/api/text/generate";
+        const apiKey = "ksenon-f95b9899a6cbe336";
 
         const chat = document.getElementById("chat");
         const userInput = document.getElementById("userInput");
@@ -94,21 +103,20 @@
                         "Authorization": apiKey,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify([
-                        { role: "system", content: "You are a helpful assistant." },
-                        { role: "user", content: userMessage }
-                    ])
+                    body: JSON.stringify({
+                        model: "gpt-4o",
+                        prompt: userMessage
+                    })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error: ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
                 }
 
-                const responseData = await response.json();
-                const assistantMessage = responseData.choices[0].message.content;
-                addMessage("assistant", assistantMessage);
+                addMessage("assistant", data.response);
             } catch (error) {
-                addMessage("assistant", "Error: Unable to process your request.");
+                addMessage("assistant", "Ошибка: " + error.message);
                 console.error(error);
             }
         }
